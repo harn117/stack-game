@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stack game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: grid;
+            place-content: center;
+            height: 100vh;
+        }
+        canvas {
+            border: 1px solid black;
+        }
+    </style>
+    <script type="module">
+        console.log('script loaded');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const MODES = {
+            FALL: 'fall',
+            BOUNCE: 'bounce',
+            GAMEOVER: 'gameover'
+        }
+        const INITIAL_BOX_WIDTH = 200;
+
+        const INITIAL_BOX_Y = 600;
+
+        const BOX_HEIGHT = 50;
+        const INITIAL_X_SPEED = 2;
+        const INITIAL_Y_SPEED = 5;
+        //states
+        let boxes = []
+        let scrolleCounter, cameraY, current, mode, xSpeed, ySpeed;
+        function createStepColor(step){
+            if(step === 0) return 'white';
+            const red = Math.floor(Math.random() * 255);
+            const green = Math.floor(Math.random() * 255);
+            const blue = Math.floor(Math.random() * 255);
+            return `rgb(${red}, ${green}, ${blue})`;
+        }
+
+        function updateCamera(){
+            if(scrolleCounter > 0){
+                cameraY ++
+                scrolleCounter = scrolleCounter - 1
+            }
+            console.log('camera',  cameraY)
+            console.log('scrolleCounter',  scrolleCounter)
+
+        } 
+        function adjustCurrentBox(difference){
+            const currentBox = boxes[current];
+            const previousBox = boxes[current - 1];
+            if(currentBox.x < previousBox.x){
+                console.log('der')
+                currentBox.x = currentBox.x - difference
+            }else{
+                console.log('ezq')
+            }
+             
+        }
+
+        function initializeGameState() {
+            console.log('initializeGameState');
+            boxes = [
+                {
+                    x: (canvas.width / 2) - (INITIAL_BOX_WIDTH / 2),
+                    y: 200,
+                    width: INITIAL_BOX_WIDTH,
+                    color: 'white',
+                }
+            ]
+            current = 1
+            mode = MODES.BOUNCE;
+            xSpeed = INITIAL_X_SPEED;
+            ySpeed = INITIAL_Y_SPEED;
+            scrolleCounter = 0;
+            cameraY = 0;
+            createNewBox();
+        }
+        function restartGame() {
+            initializeGameState();
+            draw();
+        }
+        
+
+        function draw() {
+            if (mode === MODES.GAMEOVER) return;
+            drawBackground();
+            drawBoxes();
+            if (mode === MODES.BOUNCE) {
+                moveAndDetectCollision();
+            } else if (mode === MODES.FALL) {
+                updateFallMode();
+            }
+            //updateCamera();
+            window.requestAnimationFrame(draw);
+        }
+        function drawBackground() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        function drawBoxes(box) {
+            boxes.forEach(box => {
+                const {x, y, width, color} = box;
+                const newY = INITIAL_BOX_Y - y
+                ctx.fillStyle = color;
+                ctx.fillRect(x, newY, width, BOX_HEIGHT);
+            })
+            
+        }
+        function updateFallMode() {
+            const currentBox = boxes[current];
+            currentBox.y -= ySpeed;
+            const positionPreviewBox = boxes[current - 1].y + BOX_HEIGHT;
+            if(currentBox.y === positionPreviewBox){
+                handleBoxLanding()
+            }
+        }
+        function handleBoxLanding() {
+            const currentBox = boxes[current];
+            const previousBox = boxes[current - 1];
+            const difference = currentBox.x - previousBox.x;
+            if(Math.abs(difference) > currentBox.width ){
+                mode = MODES.GAMEOVER;
+                return;
+            }
+            adjustCurrentBox(difference);
+            xSpeed += xSpeed > 0 ? 1 : -  1;
+            current++
+            scrolleCounter = BOX_HEIGHT
+            console.log(scrolleCounter)
+            mode = MODES.BOUNCE;
+            createNewBox();
+        }
+        function createNewBox() {
+            boxes[current] = {
+                x: 0,
+                y: (current + 10) * BOX_HEIGHT,
+                width: boxes[current - 1].width,
+                color: createStepColor(current),
+            }
+        }
+        function moveAndDetectCollision() {
+           const currentBox = boxes[current];
+           currentBox.x += xSpeed;
+           const isMovingRight = xSpeed > 0
+           const isMovingLeft = xSpeed < 0
+           const hasHitRightSide = currentBox.x + currentBox.width >= canvas.width
+           const hasHitLeftSide = currentBox.x <= 0
+           if ((isMovingRight && hasHitRightSide) || (isMovingLeft && hasHitLeftSide)) {
+            xSpeed *= -1;
+           }
+        }
+        document.addEventListener('keydown', (e) => {
+            if (e.key === ' ' && mode === MODES.BOUNCE) {
+                mode = MODES.FALL;
+            }
+        })
+        restartGame();
+    </script>
+</head>
+<body>
+    <canvas id="canvas" width="320" height="500"></canvas>
+    auiue
+</body>
